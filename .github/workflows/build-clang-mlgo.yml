@@ -14,7 +14,6 @@ jobs:
           sparse-checkout: |
             llvm
             clang
-            lld
             cmake
             third-party
 
@@ -29,7 +28,7 @@ jobs:
         shell: cmd
         run: |
           cmake -G "Ninja" ^
-            -DLLVM_ENABLE_PROJECTS="clang;lld" ^
+            -DLLVM_ENABLE_PROJECTS="clang" ^
             -DLLVM_TARGETS_TO_BUILD="X86" ^
             -DLLVM_ENABLE_MLGO=ON ^
             -DLLVM_BUILD_TESTS=OFF ^
@@ -54,7 +53,7 @@ jobs:
 
       - name: Build
         shell: cmd
-        run: ninja -C build -j4 clang lld
+        run: ninja -C build -j4 clang
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
