@@ -1,0 +1,43 @@
+name: Build Clang Minimal MLGO
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: llvm/llvm-project
+          fetch-depth: 1
+
+      - name: Install Ninja
+        uses: seanmiddleditch/gha-setup-ninja@v3
+
+      - name: Configure
+        run: |
+          cmake -G "Ninja" ^
+            -DLLVM_ENABLE_PROJECTS="clang;lld" ^
+            -DLLVM_TARGETS_TO_BUILD="X86" ^
+            -DLLVM_ENABLE_MLGO=ON ^
+            -DLLVM_BUILD_TESTS=OFF ^
+            -DLLVM_INCLUDE_TESTS=OFF ^
+            -DLLVM_INCLUDE_EXAMPLES=OFF ^
+            -DLLVM_INCLUDE_DOCS=OFF ^
+            -DLLVM_ENABLE_TERMINFO=OFF ^
+            -DLLVM_ENABLE_ZLIB=OFF ^
+            -DLLVM_ENABLE_ZSTD=OFF ^
+            -DLLVM_ENABLE_LIBXML2=OFF ^
+            -DCMAKE_BUILD_TYPE=Release ^
+            -DLLVM_ENABLE_ASSERTIONS=OFF ^
+            -S llvm -B build
+
+      - name: Build
+        run: ninja -C build clang lld
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: clang-mlgo-windows
+          path: build/bin
