@@ -18,6 +18,7 @@ jobs:
           sparse-checkout: |
             llvm
             clang
+            lld
             cmake
             third-party
 
@@ -29,6 +30,16 @@ jobs:
         with:
           version: v0.10.0
 
+      - name: Patch LLD for Windows-only linking
+        shell: powershell
+        run: |
+          $path = Join-Path $env:GITHUB_WORKSPACE 'lld\CMakeLists.txt'
+          $content = Get-Content $path -Raw
+          $content = $content -replace '(?m)^\s*add_subdirectory\(ELF\)\s*$', ''
+          $content = $content -replace '(?m)^\s*add_subdirectory\(MachO\)\s*$', ''
+          $content = $content -replace '(?m)^\s*add_subdirectory\(wasm\)\s*$', ''
+          Set-Content -Path $path -Value $content -NoNewline
+
       - name: Show disk space before build
         shell: powershell
         run: Get-PSDrive -PSProvider FileSystem | Format-Table -AutoSize
@@ -39,9 +50,11 @@ jobs:
           cmake -G "Ninja" ^
             -DCMAKE_C_COMPILER_LAUNCHER=sccache ^
             -DCMAKE_CXX_COMPILER_LAUNCHER=sccache ^
-            -DLLVM_ENABLE_PROJECTS="clang" ^
+            -DCMAKE_INSTALL_PREFIX=%CD%\install ^
+            -DLLVM_ENABLE_PROJECTS="clang;lld" ^
             -DLLVM_TARGETS_TO_BUILD="X86" ^
             -DLLVM_ENABLE_MLGO=ON ^
+            -DLLVM_INSTALL_TOOLCHAIN_ONLY=ON ^
             -DLLVM_BUILD_TESTS=OFF ^
             -DLLVM_INCLUDE_TESTS=OFF ^
             -DLLVM_BUILD_BENCHMARKS=OFF ^
@@ -64,10 +77,14 @@ jobs:
 
       - name: Build
         shell: cmd
-        run: ninja -C build -j4 clang
+        run: ninja -C build -j4 clang lld
+
+      - name: Install
+        shell: cmd
+        run: ninja -C build install
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: clang-mlgo-windows
-          path: build/bin
+          path: install
