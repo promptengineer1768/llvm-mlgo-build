@@ -16,6 +16,7 @@ jobs:
         uses: seanmiddleditch/gha-setup-ninja@v3
 
       - name: Configure
+        shell: cmd
         run: |
           cmake -G "Ninja" ^
             -DLLVM_ENABLE_PROJECTS="clang;lld" ^
@@ -23,8 +24,11 @@ jobs:
             -DLLVM_ENABLE_MLGO=ON ^
             -DLLVM_BUILD_TESTS=OFF ^
             -DLLVM_INCLUDE_TESTS=OFF ^
+            -DLLVM_BUILD_BENCHMARKS=OFF ^
+            -DLLVM_INCLUDE_BENCHMARKS=OFF ^
             -DLLVM_INCLUDE_EXAMPLES=OFF ^
             -DLLVM_INCLUDE_DOCS=OFF ^
+            -DLLVM_INCLUDE_UTILS=OFF ^
             -DLLVM_ENABLE_TERMINFO=OFF ^
             -DLLVM_ENABLE_ZLIB=OFF ^
             -DLLVM_ENABLE_ZSTD=OFF ^
@@ -34,6 +38,7 @@ jobs:
             -S llvm -B build
 
       - name: Build
+        shell: cmd
         run: ninja -C build clang lld
 
       - name: Upload artifacts
