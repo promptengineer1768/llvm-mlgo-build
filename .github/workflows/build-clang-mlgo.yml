@@ -5,15 +5,25 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
         with:
           repository: llvm/llvm-project
           fetch-depth: 1
+          sparse-checkout: |
+            llvm
+            clang
+            lld
+            cmake
+            third-party
 
       - name: Install Ninja
         uses: seanmiddleditch/gha-setup-ninja@v3
+
+      - name: Show disk space before build
+        shell: powershell
+        run: Get-PSDrive -PSProvider FileSystem | Format-Table -AutoSize
 
       - name: Configure
         shell: cmd
@@ -29,17 +39,22 @@ jobs:
             -DLLVM_INCLUDE_EXAMPLES=OFF ^
             -DLLVM_INCLUDE_DOCS=OFF ^
             -DLLVM_INCLUDE_UTILS=OFF ^
+            -DLLVM_ENABLE_BINDINGS=OFF ^
+            -DCLANG_ENABLE_ARCMT=OFF ^
+            -DCLANG_ENABLE_STATIC_ANALYZER=OFF ^
             -DLLVM_ENABLE_TERMINFO=OFF ^
             -DLLVM_ENABLE_ZLIB=OFF ^
             -DLLVM_ENABLE_ZSTD=OFF ^
             -DLLVM_ENABLE_LIBXML2=OFF ^
             -DCMAKE_BUILD_TYPE=Release ^
             -DLLVM_ENABLE_ASSERTIONS=OFF ^
+            -DLLVM_PARALLEL_COMPILE_JOBS=4 ^
+            -DLLVM_PARALLEL_LINK_JOBS=1 ^
             -S llvm -B build
 
       - name: Build
         shell: cmd
-        run: ninja -C build clang lld
+        run: ninja -C build -j4 clang lld
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
