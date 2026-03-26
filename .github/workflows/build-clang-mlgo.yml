@@ -27,9 +27,9 @@ jobs:
           sparse-checkout: |
             llvm
             clang
-            compiler-rt
             lld
             cmake
+            runtimes
             third-party
 
       - name: Install Ninja
