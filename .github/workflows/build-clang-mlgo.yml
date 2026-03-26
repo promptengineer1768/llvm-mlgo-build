@@ -47,18 +47,24 @@ jobs:
         shell: powershell
         run: |
           $path = Join-Path $env:GITHUB_WORKSPACE 'lld\CMakeLists.txt'
-          $content = Get-Content $path -Raw
-          $content = $content -replace '(?m)^\s*add_subdirectory\(ELF\)\s*$', ''
-          $content = $content -replace '(?m)^\s*add_subdirectory\(MachO\)\s*$', ''
-          $content = $content -replace '(?m)^\s*add_subdirectory\(wasm\)\s*$', ''
-          Set-Content -Path $path -Value $content -NoNewline
+          $content = Get-Content $path
+          $content = $content | Where-Object {
+            $trimmed = $_.Trim()
+            $trimmed -notin @('add_subdirectory(ELF)', 'add_subdirectory(MachO)', 'add_subdirectory(wasm)')
+          }
+          Set-Content -Path $path -Value ($content -join "`n") -Encoding utf8
 
           $toolPath = Join-Path $env:GITHUB_WORKSPACE 'lld\tools\lld\CMakeLists.txt'
-          $toolContent = Get-Content $toolPath -Raw
-          $toolContent = $toolContent -replace '(?m)^\s*lldELF\s*$', ''
-          $toolContent = $toolContent -replace '(?m)^\s*lldMachO\s*$', ''
-          $toolContent = $toolContent -replace '(?m)^\s*lldWasm\s*$', ''
-          Set-Content -Path $toolPath -Value $toolContent -NoNewline
+          $toolContent = Get-Content $toolPath
+          $toolContent = $toolContent | Where-Object {
+            $trimmed = $_.Trim()
+            $trimmed -notin @('lldELF', 'lldMachO', 'lldWasm')
+          }
+          Set-Content -Path $toolPath -Value ($toolContent -join "`n") -Encoding utf8
+
+          if (Select-String -Path $toolPath -Pattern 'lldELF|lldMachO|lldWasm' -Quiet) {
+            throw 'LLD backend libraries still present after patch'
+          }
 
       - name: Log disk space before configure
         shell: powershell
