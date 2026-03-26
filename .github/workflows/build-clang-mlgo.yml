@@ -10,7 +10,16 @@ concurrency:
 jobs:
   build:
     runs-on: windows-2022
+    env:
+      SCCACHE_GHA_ENABLED: "true"
     steps:
+      - name: Log disk space at start
+        shell: powershell
+        run: |
+          Get-PSDrive -PSProvider FileSystem | Sort-Object Name | ForEach-Object {
+            "{0}: Free={1:N2} GiB Used={2:N2} GiB Root={3}" -f $_.Name, ($_.Free / 1GB), ($_.Used / 1GB), $_.Root
+          }
+
       - uses: actions/checkout@v4
         with:
           repository: llvm/llvm-project
@@ -18,6 +27,9 @@ jobs:
           sparse-checkout: |
             llvm
             clang
+            clang-tools-extra
+            compiler-rt
+            lld
             cmake
             third-party
 
@@ -34,6 +46,13 @@ jobs:
           path: build
           key: llvm-build-${{ runner.os }}-${{ steps.source.outputs.sha }}-${{ hashFiles('.github/workflows/build-clang-mlgo.yml') }}
 
+      - name: Log disk space after cache restore
+        shell: powershell
+        run: |
+          Get-PSDrive -PSProvider FileSystem | Sort-Object Name | ForEach-Object {
+            "{0}: Free={1:N2} GiB Used={2:N2} GiB Root={3}" -f $_.Name, ($_.Free / 1GB), ($_.Used / 1GB), $_.Root
+          }
+
       - name: Install Ninja
         uses: seanmiddleditch/gha-setup-ninja@v3
 
@@ -42,9 +61,22 @@ jobs:
         with:
           version: v0.10.0
 
-      - name: Show disk space before build
+      - name: Patch LLD for Windows-only linking
         shell: powershell
-        run: Get-PSDrive -PSProvider FileSystem | Format-Table -AutoSize
+        run: |
+          $path = Join-Path $env:GITHUB_WORKSPACE 'lld\CMakeLists.txt'
+          $content = Get-Content $path -Raw
+          $content = $content -replace '(?m)^\s*add_subdirectory\(ELF\)\s*$', ''
+          $content = $content -replace '(?m)^\s*add_subdirectory\(MachO\)\s*$', ''
+          $content = $content -replace '(?m)^\s*add_subdirectory\(wasm\)\s*$', ''
+          Set-Content -Path $path -Value $content -NoNewline
+
+      - name: Log disk space before configure
+        shell: powershell
+        run: |
+          Get-PSDrive -PSProvider FileSystem | Sort-Object Name | ForEach-Object {
+            "{0}: Free={1:N2} GiB Used={2:N2} GiB Root={3}" -f $_.Name, ($_.Free / 1GB), ($_.Used / 1GB), $_.Root
+          }
 
       - name: Configure
         shell: cmd
@@ -54,7 +86,8 @@ jobs:
             -DCMAKE_CXX_COMPILER_LAUNCHER=sccache ^
             -DCMAKE_ASM_COMPILER_LAUNCHER=sccache ^
             -DCMAKE_INSTALL_PREFIX=%CD%\install ^
-            -DLLVM_ENABLE_PROJECTS="clang" ^
+            -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;lld" ^
+            -DLLVM_ENABLE_RUNTIMES="compiler-rt" ^
             -DLLVM_TARGETS_TO_BUILD="X86" ^
             -DLLVM_ENABLE_MLGO=ON ^
             -DLLVM_INSTALL_TOOLCHAIN_ONLY=ON ^
@@ -78,19 +111,41 @@ jobs:
             -DLLVM_PARALLEL_LINK_JOBS=1 ^
             -S llvm -B build
 
+      - name: Log disk space after configure
+        shell: powershell
+        run: |
+          Get-PSDrive -PSProvider FileSystem | Sort-Object Name | ForEach-Object {
+            "{0}: Free={1:N2} GiB Used={2:N2} GiB Root={3}" -f $_.Name, ($_.Free / 1GB), ($_.Used / 1GB), $_.Root
+          }
+
       - name: Build
         shell: cmd
-        run: ninja -C build -j4 clang
+        run: ninja -C build -j4 clang lld
+
+      - name: Log disk space after build
+        shell: powershell
+        run: |
+          Get-PSDrive -PSProvider FileSystem | Sort-Object Name | ForEach-Object {
+            "{0}: Free={1:N2} GiB Used={2:N2} GiB Root={3}" -f $_.Name, ($_.Free / 1GB), ($_.Used / 1GB), $_.Root
+          }
 
       - name: Install
         shell: cmd
         run: ninja -C build install
 
+      - name: Log disk space after install
+        shell: powershell
+        run: |
+          Get-PSDrive -PSProvider FileSystem | Sort-Object Name | ForEach-Object {
+            "{0}: Free={1:N2} GiB Used={2:N2} GiB Root={3}" -f $_.Name, ($_.Free / 1GB), ($_.Used / 1GB), $_.Root
+          }
+
       - name: Verify Windows linker
         shell: cmd
         run: |
-          call "%ProgramFiles(x86)%\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=x64 -host_arch=x64
-          where link.exe
+          set "PATH=%CD%\install\bin;%PATH%"
+          where lld-link.exe
+          where clang-cl.exe
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
