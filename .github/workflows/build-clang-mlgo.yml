@@ -71,6 +71,7 @@ jobs:
             throw "saved_model_cli.exe not found at $src"
           }
           Copy-Item -Force $src (Join-Path $binDir "saved_model_cli.exe")
+          Copy-Item -Force $src (Join-Path $binDir "saved_model_cli")
           $shim = Join-Path $binDir "saved_model_cli.cmd"
           $shimContent = @'
           @echo off
