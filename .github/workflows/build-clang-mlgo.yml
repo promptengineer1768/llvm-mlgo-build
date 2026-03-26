@@ -57,6 +57,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install tensorflow==2.15.0
+          python -m pip install ml_dtypes==0.3.2
 
       - name: Populate missing TensorFlow headers (xla/tsl)
         shell: powershell
@@ -85,6 +86,15 @@ jobs:
           }
           $tslDir = Split-Path (Split-Path (Split-Path $tslHeader.FullName -Parent) -Parent) -Parent
           Copy-Item -Recurse -Force $tslDir (Join-Path $tfInclude "tsl")
+
+          $mlRoot = python -c "import ml_dtypes, os; print(os.path.dirname(ml_dtypes.__file__))"
+          $mlInclude = Join-Path $mlRoot "include"
+          if (-not (Test-Path $mlInclude)) {
+            throw "ml_dtypes include dir not found at $mlInclude"
+          }
+          $mlDest = Join-Path $tfInclude "ml_dtypes"
+          New-Item -ItemType Directory -Force -Path $mlDest | Out-Null
+          Copy-Item -Recurse -Force $mlInclude (Join-Path $mlDest "include")
 
       - name: Download MLGO inliner model
         shell: powershell
