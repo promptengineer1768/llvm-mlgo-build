@@ -72,8 +72,11 @@ jobs:
           }
           Copy-Item -Force $src (Join-Path $binDir "saved_model_cli.exe")
           $shim = Join-Path $binDir "saved_model_cli.cmd"
-          Set-Content -Path $shim -Encoding ascii -Value '@echo off
-"%~dp0saved_model_cli.exe" %*'
+          $shimContent = @'
+          @echo off
+          "%~dp0saved_model_cli.exe" %*
+          '@
+          Set-Content -Path $shim -Encoding ascii -Value $shimContent
           Get-ChildItem -Path $binDir | Sort-Object Name | ForEach-Object { $_.FullName }
 
       - name: Add Python bin to PATH
