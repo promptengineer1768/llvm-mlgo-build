@@ -32,7 +32,7 @@ jobs:
             clang
             lld
             cmake
-            runtimes
+            compiler-rt
             third-party
 
       - name: Install Ninja
