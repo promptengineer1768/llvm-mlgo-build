@@ -53,6 +53,13 @@ jobs:
           $content = $content -replace '(?m)^\s*add_subdirectory\(wasm\)\s*$', ''
           Set-Content -Path $path -Value $content -NoNewline
 
+          $toolPath = Join-Path $env:GITHUB_WORKSPACE 'lld\tools\lld\CMakeLists.txt'
+          $toolContent = Get-Content $toolPath -Raw
+          $toolContent = $toolContent -replace '(?m)^\s*lldELF\s*$', ''
+          $toolContent = $toolContent -replace '(?m)^\s*lldMachO\s*$', ''
+          $toolContent = $toolContent -replace '(?m)^\s*lldWasm\s*$', ''
+          Set-Content -Path $toolPath -Value $toolContent -NoNewline
+
       - name: Log disk space before configure
         shell: powershell
         run: |
