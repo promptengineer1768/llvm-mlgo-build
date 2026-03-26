@@ -58,6 +58,22 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install tensorflow==2.15.0
 
+      - name: Populate missing TensorFlow headers (xla/tsl)
+        shell: powershell
+        run: |
+          $tfRoot = python -c "import tensorflow as tf, os; print(os.path.dirname(tf.__file__))"
+          $tfInclude = Join-Path $tfRoot "include"
+          if (-not (Test-Path $tfInclude)) {
+            throw "TensorFlow include dir not found at $tfInclude"
+          }
+          $srcZip = "C:\mlgo-model\tf-src.zip"
+          $srcRoot = "C:\mlgo-model\tf-src"
+          Invoke-WebRequest -Uri "https://github.com/tensorflow/tensorflow/archive/refs/tags/v2.15.0.zip" -OutFile $srcZip
+          Expand-Archive -Path $srcZip -DestinationPath $srcRoot -Force
+          $tfSrc = Join-Path $srcRoot "tensorflow-2.15.0"
+          Copy-Item -Recurse -Force (Join-Path $tfSrc "xla") (Join-Path $tfInclude "xla")
+          Copy-Item -Recurse -Force (Join-Path $tfSrc "tsl") (Join-Path $tfInclude "tsl")
+
       - name: Download MLGO inliner model
         shell: powershell
         run: |
