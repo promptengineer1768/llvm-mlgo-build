@@ -59,6 +59,19 @@ jobs:
           python -m pip install tensorflow==2.15.0
           python -m pip install ml_dtypes==0.3.2
 
+      - name: Ensure saved_model_cli is on expected path
+        shell: powershell
+        run: |
+          $pyRoot = python -c "import sys; print(sys.exec_prefix)"
+          $binDir = Join-Path $pyRoot "bin"
+          $scriptsDir = Join-Path $pyRoot "Scripts"
+          New-Item -ItemType Directory -Force -Path $binDir | Out-Null
+          $src = Join-Path $scriptsDir "saved_model_cli.exe"
+          if (-not (Test-Path $src)) {
+            throw "saved_model_cli.exe not found at $src"
+          }
+          Copy-Item -Force $src (Join-Path $binDir "saved_model_cli.exe")
+
       - name: Populate missing TensorFlow headers (xla/tsl)
         shell: powershell
         run: |
