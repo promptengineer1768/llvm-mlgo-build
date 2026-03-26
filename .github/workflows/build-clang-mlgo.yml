@@ -71,12 +71,14 @@ jobs:
 
           $driverPath = Join-Path $env:GITHUB_WORKSPACE 'lld\include\lld\Common\Driver.h'
           $driverContent = Get-Content $driverPath -Raw
-          $driverContent = [regex]::Replace($driverContent, '(?s)#define LLD_ALL_DRIVERS.*?#endif', @'
-#define LLD_ALL_DRIVERS                                                        \
-  {                                                                            \
-    {lld::WinLink, &lld::coff::link}, {lld::MinGW, &lld::mingw::link}         \
-  }
-'@ + "`n#endif")
+          $driverReplacement = @(
+            '#define LLD_ALL_DRIVERS                                                        \'
+            '  {                                                                            \'
+            '    {lld::WinLink, &lld::coff::link}, {lld::MinGW, &lld::mingw::link}         \'
+            '  }'
+            '#endif'
+          ) -join "`n"
+          $driverContent = [regex]::Replace($driverContent, '(?s)#define LLD_ALL_DRIVERS.*?#endif', $driverReplacement)
           Set-Content -Path $driverPath -Value $driverContent -Encoding utf8
 
           if (Select-String -Path $driverPath -Pattern 'lld::elf::link|lld::macho::link|lld::wasm::link' -Quiet) {
