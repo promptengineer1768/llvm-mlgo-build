@@ -66,6 +66,20 @@ jobs:
             throw 'LLD backend libraries still present after patch'
           }
 
+          $driverPath = Join-Path $env:GITHUB_WORKSPACE 'lld\include\lld\Common\Driver.h'
+          $driverContent = Get-Content $driverPath -Raw
+          $driverContent = $driverContent -replace '(?s)#define LLD_ALL_DRIVERS.*?\n\}', @'
+#define LLD_ALL_DRIVERS                                                        \
+  {                                                                            \
+    {lld::WinLink, &lld::coff::link}, {lld::MinGW, &lld::mingw::link}         \
+  }
+'@
+          Set-Content -Path $driverPath -Value $driverContent -Encoding utf8
+
+          if (Select-String -Path $driverPath -Pattern 'lld::elf::link|lld::macho::link|lld::wasm::link' -Quiet) {
+            throw 'LLD driver table still includes disabled backends'
+          }
+
       - name: Log disk space before configure
         shell: powershell
         run: |
