@@ -87,8 +87,12 @@ jobs:
           $tslDir = Split-Path (Split-Path (Split-Path $tslHeader.FullName -Parent) -Parent) -Parent
           Copy-Item -Recurse -Force $tslDir (Join-Path $tfInclude "tsl")
 
-          $mlRoot = python -c "import ml_dtypes, os; print(os.path.dirname(ml_dtypes.__file__))"
-          $mlInclude = Join-Path $mlRoot "include"
+          $mlZip = "C:\mlgo-model\ml_dtypes.zip"
+          $mlRoot = "C:\mlgo-model\ml_dtypes-src"
+          Invoke-WebRequest -Uri "https://github.com/jax-ml/ml_dtypes/archive/refs/tags/v0.3.2.zip" -OutFile $mlZip
+          Expand-Archive -Path $mlZip -DestinationPath $mlRoot -Force
+          $mlSrc = Join-Path $mlRoot "ml_dtypes-0.3.2"
+          $mlInclude = Join-Path $mlSrc "ml_dtypes\include"
           if (-not (Test-Path $mlInclude)) {
             throw "ml_dtypes include dir not found at $mlInclude"
           }
