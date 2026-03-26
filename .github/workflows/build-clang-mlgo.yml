@@ -71,6 +71,7 @@ jobs:
             throw "saved_model_cli.exe not found at $src"
           }
           Copy-Item -Force $src (Join-Path $binDir "saved_model_cli.exe")
+          Copy-Item -Force $src (Join-Path $binDir "saved_model_cli")
           Get-ChildItem -Path $binDir | Sort-Object Name | ForEach-Object { $_.FullName }
 
       - name: Add Python bin to PATH
