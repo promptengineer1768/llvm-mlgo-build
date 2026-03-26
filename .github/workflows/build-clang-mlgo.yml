@@ -100,6 +100,18 @@ jobs:
           New-Item -ItemType Directory -Force -Path $mlDest | Out-Null
           Copy-Item -Recurse -Force $mlInclude (Join-Path $mlDest "include")
 
+      - name: Patch TensorFlow AOT runtime literals for MinGW
+        shell: powershell
+        run: |
+          $tfRoot = python -c "import tensorflow as tf, os; print(os.path.dirname(tf.__file__))"
+          $envTime = Join-Path $tfRoot "xla_aot_runtime_src\\tsl\\platform\\windows\\env_time.cc"
+          if (-not (Test-Path $envTime)) {
+            throw "TensorFlow AOT env_time.cc not found at $envTime"
+          }
+          $content = Get-Content -Path $envTime -Raw
+          $patched = $content -replace 'i64', 'LL'
+          Set-Content -Path $envTime -Value $patched -Encoding utf8
+
       - name: Download MLGO inliner model
         shell: powershell
         run: |
