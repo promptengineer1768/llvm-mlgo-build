@@ -12,6 +12,9 @@ jobs:
     runs-on: windows-2022
     env:
       SCCACHE_GHA_ENABLED: "true"
+      SCCACHE_DIR: C:\sccache
+      BUILD_DIR: C:\llvm-build
+      INSTALL_DIR: C:\llvm-install
     steps:
       - name: Log disk space at start
         shell: powershell
@@ -39,6 +42,7 @@ jobs:
         uses: mozilla-actions/sccache-action@v0.0.9
         with:
           version: v0.10.0
+        continue-on-error: true
 
       - name: Patch LLD for Windows-only linking
         shell: powershell
@@ -64,7 +68,7 @@ jobs:
             -DCMAKE_C_COMPILER_LAUNCHER=sccache ^
             -DCMAKE_CXX_COMPILER_LAUNCHER=sccache ^
             -DCMAKE_ASM_COMPILER_LAUNCHER=sccache ^
-            -DCMAKE_INSTALL_PREFIX=%CD%\install ^
+            -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% ^
             -DLLVM_ENABLE_PROJECTS="clang;lld" ^
             -DLLVM_ENABLE_RUNTIMES="compiler-rt" ^
             -DLLVM_TARGETS_TO_BUILD="X86" ^
@@ -88,7 +92,7 @@ jobs:
             -DLLVM_ENABLE_ASSERTIONS=OFF ^
             -DLLVM_PARALLEL_COMPILE_JOBS=4 ^
             -DLLVM_PARALLEL_LINK_JOBS=1 ^
-            -S llvm -B build
+            -S %GITHUB_WORKSPACE%\llvm -B %BUILD_DIR%
 
       - name: Log disk space after configure
         shell: powershell
@@ -99,7 +103,7 @@ jobs:
 
       - name: Build
         shell: cmd
-        run: ninja -C build -j4 clang lld
+        run: ninja -C %BUILD_DIR% -j4 clang lld
 
       - name: Log disk space after build
         shell: powershell
@@ -110,7 +114,7 @@ jobs:
 
       - name: Install
         shell: cmd
-        run: ninja -C build install
+        run: ninja -C %BUILD_DIR% install
 
       - name: Log disk space after install
         shell: powershell
@@ -122,7 +126,7 @@ jobs:
       - name: Verify Windows linker
         shell: cmd
         run: |
-          set "PATH=%CD%\install\bin;%PATH%"
+          set "PATH=%INSTALL_DIR%\bin;%PATH%"
           where lld-link.exe
           where clang-cl.exe
 
@@ -130,4 +134,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: clang-mlgo-windows
-          path: install
+          path: C:\llvm-install
