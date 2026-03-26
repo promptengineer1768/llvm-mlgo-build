@@ -66,6 +66,7 @@ jobs:
           if (-not (Test-Path $tfInclude)) {
             throw "TensorFlow include dir not found at $tfInclude"
           }
+          New-Item -ItemType Directory -Force -Path C:\mlgo-model | Out-Null
           $srcZip = "C:\mlgo-model\tf-src.zip"
           $srcRoot = "C:\mlgo-model\tf-src"
           Invoke-WebRequest -Uri "https://github.com/tensorflow/tensorflow/archive/refs/tags/v2.15.0.zip" -OutFile $srcZip
