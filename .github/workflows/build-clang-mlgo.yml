@@ -18,6 +18,7 @@ jobs:
       SCCACHE_DIR: C:\sccache
       BUILD_DIR: C:\llvm-build
       INSTALL_DIR: C:\llvm-install
+      MODEL_DIR: C:\mlgo-model\inlining-Oz-v1.2\saved_model
     steps:
       - name: Log disk space at start
         shell: powershell
@@ -45,6 +46,25 @@ jobs:
         with:
           version: v0.10.0
         continue-on-error: true
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install TensorFlow (AOT compiler)
+        shell: powershell
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install tensorflow==2.15.0
+
+      - name: Download MLGO inliner model
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Force -Path C:\mlgo-model | Out-Null
+          $zipPath = "C:\mlgo-model\saved_model.zip"
+          Invoke-WebRequest -Uri "https://github.com/google/ml-compiler-opt/releases/download/inlining-Oz-v1.2/saved_model.zip" -OutFile $zipPath
+          Expand-Archive -Path $zipPath -DestinationPath "C:\mlgo-model\inlining-Oz-v1.2" -Force
 
       - name: Patch LLD for Windows-only linking
         shell: powershell
@@ -107,6 +127,7 @@ jobs:
       - name: Configure
         shell: cmd
         run: |
+          for /f %%i in ('python -c "import tensorflow as tf, os; print(os.path.dirname(tf.__file__))"') do set "TF_PIP=%%i"
           cmake -G "Ninja" ^
             -DCMAKE_C_COMPILER_LAUNCHER=sccache ^
             -DCMAKE_CXX_COMPILER_LAUNCHER=sccache ^
@@ -115,6 +136,8 @@ jobs:
             -DLLVM_ENABLE_PROJECTS="clang;lld" ^
             -DLLVM_TARGETS_TO_BUILD="X86" ^
             -DLLVM_ENABLE_MLGO=ON ^
+            -DTENSORFLOW_AOT_PATH=%TF_PIP% ^
+            -DLLVM_INLINER_MODEL_PATH=%MODEL_DIR% ^
             -DLLVM_INSTALL_TOOLCHAIN_ONLY=ON ^
             -DLLVM_BUILD_TESTS=OFF ^
             -DLLVM_INCLUDE_TESTS=OFF ^
