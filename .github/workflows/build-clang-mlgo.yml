@@ -71,8 +71,19 @@ jobs:
           Invoke-WebRequest -Uri "https://github.com/tensorflow/tensorflow/archive/refs/tags/v2.15.0.zip" -OutFile $srcZip
           Expand-Archive -Path $srcZip -DestinationPath $srcRoot -Force
           $tfSrc = Join-Path $srcRoot "tensorflow-2.15.0"
-          Copy-Item -Recurse -Force (Join-Path $tfSrc "xla") (Join-Path $tfInclude "xla")
-          Copy-Item -Recurse -Force (Join-Path $tfSrc "tsl") (Join-Path $tfInclude "tsl")
+          $xlaHeader = Get-ChildItem -Recurse -Path $tfSrc -Filter cpu_function_runtime.h | Select-Object -First 1
+          if (-not $xlaHeader) {
+            throw "xla/cpu_function_runtime.h not found in TensorFlow source"
+          }
+          $xlaDir = Split-Path $xlaHeader.FullName -Parent
+          Copy-Item -Recurse -Force $xlaDir (Join-Path $tfInclude "xla")
+
+          $tslHeader = Get-ChildItem -Recurse -Path $tfSrc -Filter eigen_contraction_kernel.h | Select-Object -First 1
+          if (-not $tslHeader) {
+            throw "tsl/framework/contraction/eigen_contraction_kernel.h not found in TensorFlow source"
+          }
+          $tslDir = Split-Path (Split-Path (Split-Path $tslHeader.FullName -Parent) -Parent) -Parent
+          Copy-Item -Recurse -Force $tslDir (Join-Path $tfInclude "tsl")
 
       - name: Download MLGO inliner model
         shell: powershell
