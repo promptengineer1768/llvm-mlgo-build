@@ -1,6 +1,6 @@
 LLVM with MLGO enabled for Windows
 
-This repository packages a Windows clang release that was built with MLGO support and documents how to pair it with the pretrained MLGO inlining model.
+This repository packages a Windows clang release that was built with MLGO support. MLGO (Machine Learning Guided Optimization) uses a trained model to guide compiler decisions such as inlining, aiming to improve runtime performance or code size compared to heuristic-only policies. The AOT build in this repo embeds the release-mode inliner model so you can experiment with MLGO without rebuilding LLVM.
 
 ## Downloads
 
