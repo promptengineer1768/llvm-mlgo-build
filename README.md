@@ -67,7 +67,7 @@ Expand-Archive -Path "C:\Users\you\Documents\Projects\llvm\downloads\clang-mlgo-
 
 ### 2) Build baseline and MLGO binaries
 
-The AOT release ships `clang-cl.exe`, so the easiest reproducible path is to use `vcvars64.bat` and `clang-cl`.
+This tutorial compares a Microsoft Visual C++ 2022 toolchain environment (for headers/libraries) with an MLGO-enabled `clang-cl.exe` build. It assumes you already have Visual Studio 2022 (or Build Tools 2022) installed so `vcvars64.bat` is available. The AOT release ships `clang-cl.exe`, so the easiest reproducible path is to use `vcvars64.bat` and `clang-cl`.
 
 ```cmd
 cmd /c "call \"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvars64.bat\" >nul ^
