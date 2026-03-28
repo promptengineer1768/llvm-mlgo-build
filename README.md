@@ -13,6 +13,8 @@ Use these direct links for the AOT release artifacts:
 
 You need the MLGO AOT compiler release zip. This release already embeds the release-mode inliner model.
 
+You also need Microsoft Visual C++ Build Tools (Visual Studio 2022 or Build Tools 2022) installed so `vcvars64.bat` can set up the Windows SDK headers and libraries required to build Windows binaries with `clang-cl`.
+
 ## Suggested Layout
 
 The examples below assume this local structure:
