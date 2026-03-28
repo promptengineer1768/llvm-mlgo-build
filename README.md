@@ -163,3 +163,9 @@ cmd /c "call \"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC
     /Fe:\"C:\Users\you\Documents\Projects\llvm\downloads\mlgo-bench-mlgo.exe\" ^
     /clang:-mllvm /clang:-enable-ml-inliner=release"
 ```
+
+## Troubleshooting
+
+- `clang-cl.exe` fails to start: ensure MinGW runtime DLLs are on `PATH` (for example `C:\Program Files\Git\mingw64\bin`).
+- `fatal error: 'chrono' file not found`: you are invoking `clang++` without MSVC environment; use `vcvars64.bat` + `clang-cl.exe` as shown above.
+- MLGO release mode fails: use the AOT build (`22.1.2-mlgo-aot`) and include `/clang:-mllvm /clang:-enable-ml-inliner=release` on the compile command.
