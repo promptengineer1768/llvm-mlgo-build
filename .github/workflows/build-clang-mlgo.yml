@@ -73,6 +73,11 @@ jobs:
           }
           Copy-Item -Force $src (Join-Path $binDir "saved_model_cli.exe")
           Copy-Item -Force $src (Join-Path $binDir "saved_model_cli")
+          $tfRoot = python -c "import tensorflow as tf, os; print(os.path.dirname(tf.__file__))"
+          $tfBin = Resolve-Path (Join-Path $tfRoot "..\\..\\..\\..\\bin")
+          New-Item -ItemType Directory -Force -Path $tfBin | Out-Null
+          Copy-Item -Force $src (Join-Path $tfBin "saved_model_cli.exe")
+          Copy-Item -Force $src (Join-Path $tfBin "saved_model_cli")
           $shim = Join-Path $binDir "saved_model_cli.cmd"
           $shimContent = @'
           @echo off
